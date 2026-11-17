@@ -19,14 +19,6 @@ resources:
           notebook_task:
             notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/06_silver_asset_scd2
             source: WORKSPACE
-        - task_key: 05_refresh_executive_dashboard
-          depends_on:
-            - task_key: 03_aggregate_gold
-          dashboard_task:
-            subscription:
-              attachment:
-                page_attachment: {}
-            dashboard_id: 01f1e1ebaafe1f2e96035abca2316350
         - task_key: check_data_quality
           depends_on:
             - task_key: 02_transform_silver
@@ -49,6 +41,24 @@ resources:
           notebook_task:
             notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/04_gold_risk_analytics
             source: WORKSPACE
+        - task_key: 00_sync_erp_declarative_pipeline
+          pipeline_task:
+            pipeline_id: a3a4accf-8f9a-4acd-8b9a-6cdddbbe201b
+        - task_key: 06_ml_delay_scoring
+          depends_on:
+            - task_key: 03_aggregate_gold
+            - task_key: 00_sync_erp_declarative_pipeline
+          notebook_task:
+            notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/09_ml_delay_prediction
+            source: WORKSPACE
+        - task_key: 05_refresh_executive_dashboard
+          depends_on:
+            - task_key: 06_ml_delay_scoring
+          dashboard_task:
+            subscription:
+              attachment:
+                page_attachment: {}
+            dashboard_id: 01f1e1ebaafe1f2e96035abca2316350
       queue:
         enabled: true
       performance_target: PERFORMANCE_OPTIMIZED
