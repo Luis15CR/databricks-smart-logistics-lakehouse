@@ -1,0 +1,54 @@
+resources:
+  jobs:
+    smart_logistics_medallion_etl:
+      name: smart-logistics-medallion-etl
+      tasks:
+        - task_key: 01_ingest_bronze
+          notebook_task:
+            notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/02_bronze_autoloader
+            source: WORKSPACE
+        - task_key: 02_transform_silver
+          depends_on:
+            - task_key: 01_ingest_bronze
+          notebook_task:
+            notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/03_silver_dq_and_merge
+            source: WORKSPACE
+        - task_key: 02b_build_asset_scd2
+          depends_on:
+            - task_key: 02_transform_silver
+          notebook_task:
+            notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/06_silver_asset_scd2
+            source: WORKSPACE
+        - task_key: 05_refresh_executive_dashboard
+          depends_on:
+            - task_key: 03_aggregate_gold
+          dashboard_task:
+            subscription:
+              attachment:
+                page_attachment: {}
+            dashboard_id: 01f1e1ebaafe1f2e96035abca2316350
+        - task_key: check_data_quality
+          depends_on:
+            - task_key: 02_transform_silver
+          condition_task:
+            op: GREATER_THAN
+            left: "{{tasks.02_transform_silver.values.quarantine_rows}}"
+            right: "0"
+        - task_key: 04_log_dq_incident
+          depends_on:
+            - task_key: check_data_quality
+              outcome: "true"
+          notebook_task:
+            notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/05_dq_incident_logger
+            source: WORKSPACE
+        - task_key: 03_aggregate_gold
+          depends_on:
+            - task_key: check_data_quality
+              outcome: "false"
+          run_if: AT_LEAST_ONE_SUCCESS
+          notebook_task:
+            notebook_path: /Workspace/Users/lcampo25@gmail.com/databricks-smart-logistics-lakehouse/src/04_gold_risk_analytics
+            source: WORKSPACE
+      queue:
+        enabled: true
+      performance_target: PERFORMANCE_OPTIMIZED
